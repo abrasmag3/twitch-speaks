@@ -35,7 +35,10 @@ impl MessageData {
 }
 
 // forks that change the behavior will likely edit this fn
-async fn manage_messages(mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>, _shutdown: mpsc::Sender<()>) -> Result<(), tts::Error> {
+async fn manage_messages(
+    mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>,
+    _shutdown: mpsc::Sender<()>,
+) -> Result<(), tts::Error> {
     // BTreeMap of recent messages, sorted by message content
     // BTreeMap<Message, Vec<UserID>>
     // this is used to decide which messages to speak
@@ -45,7 +48,7 @@ async fn manage_messages(mut incoming_messages: mpsc::UnboundedReceiver<ServerMe
     // does not have the required features
     //TODO! use mimic3 instead of the system tts
     let mut tts = Tts::default()?;
-    
+
     // gets each message one at a time
     while let Some(message) = incoming_messages.recv().await {
         //if message is a live chat message
@@ -120,9 +123,9 @@ pub async fn main() -> Result<(), tts::Error> {
             return Ok(());
         }
     };
-    
+
     //TODO! consider making client management and the ctrl+c handler seperate
-    
+
     // join a twitch channel
     // This function only returns an error if the passed channel login name is malformed,
     // so in this simple case where the channel name is hardcoded we can ignore the potential
@@ -132,16 +135,16 @@ pub async fn main() -> Result<(), tts::Error> {
     // wait for ctrl+c
     signal::ctrl_c().await.expect("failed to wait for ctrl+c");
     // after ctrl+c, start shutdown procedure
-    
+
     // leave the twitch channel
     client.part(STREAMER.to_owned());
-    
+
     // tell other threads to shutdown
     shutdown_send.send(1).unwrap();
-    
+
     // let other threads know we are ready to shutdown
     drop(drop_to_shutdown);
-    
+
     // When every sender has gone out of scope, the recv call
     // will return with an error. We ignore the error.
     let _ = error_to_shutdown.recv().await;
