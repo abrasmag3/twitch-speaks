@@ -38,17 +38,24 @@ impl MessageData {
 async fn manage_messages(mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>, _shutdown: mpsc::Sender<()>) -> Result<(), tts::Error> {
     // BTreeMap of recent messages, sorted by message content
     // BTreeMap<Message, Vec<UserID>>
+    // this is used to decide which messages to speak
     let mut messages: BTreeMap<String, MessageData> = BTreeMap::new();
+    // link to system tts
+    //TODO! exit program early if the system tts
+    // does not have the required features
+    //TODO! use mimic3 instead of the system tts
     let mut tts = Tts::default()?;
-
+    
+    // gets each message one at a time
     while let Some(message) = incoming_messages.recv().await {
+        //if message is a live chat message
         match message {
             ServerMessage::Privmsg(msg) => {
                 // add message to map
-                //TODO! consider fuzzy finding instead of lowercasing
                 let text_normalized = msg.message_text.as_str().to_lowercase();
 
                 // if message is not in map, add it
+                //TODO! consider fuzzy finding
                 if !messages.contains_key(&text_normalized) {
                     messages.insert(text_normalized, MessageData::new(msg.sender.id));
                 } else {
@@ -95,13 +102,14 @@ pub async fn main() -> Result<(), tts::Error> {
     let (shutdown_send, mut shutdown_recv) = broadcast::channel(2);
     let (drop_to_shutdown, mut error_to_shutdown) = mpsc::channel(1);
 
-    // default configuration is to join chat as anonymous.
+    // default configuration is to join chat as anonymous
     let config = ClientConfig::default();
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
-    // start consuming incoming messages,
-    // otherwise they will back up.
+    // select! runs two functions and returns the result of the first one that ends
+    // the shutdown function will always end first unless there is an error,
+    // but when it ends it will stop the message manager function
     tokio::select! {
         // if an error is recieved, return the error
         // we could just move `drop_to_shutdown` into the fn, but i prefer
@@ -118,7 +126,7 @@ pub async fn main() -> Result<(), tts::Error> {
     // join a twitch channel
     // This function only returns an error if the passed channel login name is malformed,
     // so in this simple case where the channel name is hardcoded we can ignore the potential
-    // error with `unwrap`.
+    // error with `unwrap`
     client.join(STREAMER.to_owned()).unwrap();
 
     // wait for ctrl+c
