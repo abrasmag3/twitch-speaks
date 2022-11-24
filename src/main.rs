@@ -36,7 +36,7 @@ impl MessageData {
 
 // forks that change the behavior will likely edit this fn
 //TODO! use better error handling
-async fn manage_messages(mut incoming_messages: mspc::UnboundedReceiver<ServerMessage>) -> Result<(), tts::Error> {
+async fn manage_messages(mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>, _shutdown: mpsc::Sender<()>) -> Result<(), tts::Error> {
     // BTreeMap of recent messages, sorted by message content
     // BTreeMap<Message, Vec<UserID>>
     let mut messages: BTreeMap<String, MessageData> = BTreeMap::new();
@@ -96,7 +96,7 @@ pub async fn main() -> Result<(), tts::Error> {
     // create shutdown broadcast channel and shutdown finish channel
     //TODO! wrap in a struct
     let (shutdown_send, mut shutdown_recv) = broadcast::channel(2);
-    let (drop_to_shutdown, mut error_to_shutdown) = mspc::channel(1);
+    let (drop_to_shutdown, mut error_to_shutdown) = mpsc::channel(1);
 
     // default configuration is to join chat as anonymous.
     let config = ClientConfig::default();
@@ -139,7 +139,7 @@ pub async fn main() -> Result<(), tts::Error> {
     
     // When every sender has gone out of scope, the recv call
     // will return with an error. We ignore the error.
-    let _ = recv.recv().await;
+    let _ = error_to_shutdown.recv().await;
 
     Ok(())
 }

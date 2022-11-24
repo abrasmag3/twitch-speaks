@@ -1277,7 +1277,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "twitch-plays"
+name = "twitch-speaks"
 version = "0.1.0"
 dependencies = [
  "rand",
