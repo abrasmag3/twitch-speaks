@@ -35,7 +35,6 @@ impl MessageData {
 }
 
 // forks that change the behavior will likely edit this fn
-//TODO! use better error handling
 async fn manage_messages(mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>, _shutdown: mpsc::Sender<()>) -> Result<(), tts::Error> {
     // BTreeMap of recent messages, sorted by message content
     // BTreeMap<Message, Vec<UserID>>
@@ -90,11 +89,9 @@ async fn manage_messages(mut incoming_messages: mpsc::UnboundedReceiver<ServerMe
     Ok(())
 }
 
-//TODO! use better error handling
 #[tokio::main]
 pub async fn main() -> Result<(), tts::Error> {
-    // create shutdown broadcast channel and shutdown finish channel
-    //TODO! wrap in a struct
+    // create shutdown start channel and shutdown end channel
     let (shutdown_send, mut shutdown_recv) = broadcast::channel(2);
     let (drop_to_shutdown, mut error_to_shutdown) = mpsc::channel(1);
 
