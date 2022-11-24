@@ -1,0 +1,12 @@
+[package]
+name = "twitch-plays"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+twitch-irc = "5.0.0"
+tokio = { version = "1.22.0", features = ["full"]}
+rand = "0.8.4"
+tts = "0.24.3"
