@@ -39,6 +39,8 @@ async fn manage_messages(
     mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>,
     _shutdown: mpsc::Sender<()>,
 ) -> Result<(), tts::Error> {
+    
+    tracing::info!("Starting manage_messages");
     // BTreeMap of recent messages, sorted by message content
     // BTreeMap<Message, Vec<UserID>>
     // this is used to decide which messages to speak
@@ -48,9 +50,11 @@ async fn manage_messages(
     // does not have the required features
     //TODO! use mimic3 instead of the system tts
     let mut tts = Tts::default()?;
+    tracing::info!("TTS initialized");
 
     // gets each message one at a time
     while let Some(message) = incoming_messages.recv().await {
+        tracing::info!("Recieved message");
         //if message is a live chat message
         match message {
             ServerMessage::Privmsg(msg) => {
@@ -95,21 +99,23 @@ async fn manage_messages(
             messages.remove(&message);
         }
     }
+    println!("returning");
     //TODO! should we return an error if there are no more messages?
     Ok(())
 }
 
 #[tokio::main]
 pub async fn main() -> Result<(), tts::Error> {
+    tracing_subscriber::fmt::init();
     // create shutdown start channel and shutdown end channel
     let (shutdown_send, mut shutdown_recv) = broadcast::channel(2);
     let (drop_to_shutdown, mut error_to_shutdown) = mpsc::channel(1);
-
+    
     // default configuration is to join chat as anonymous
     let config = ClientConfig::default();
-    let (mut incoming_messages, client) =
+    let (incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
-
+    
     // select! runs two functions and returns the result of the first one that ends
     // the shutdown function will always end first unless there is an error,
     // but when it ends it will stop the message manager function
