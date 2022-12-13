@@ -9,7 +9,6 @@ use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
 use tokio::signal;
-use tokio::sync::{broadcast, mpsc};
 
 // settings
 // streamer to get chat messages from
@@ -35,7 +34,7 @@ impl MessageData {
 }
 
 #[tokio::main]
-pub async fn main() -> Result<(), tts::Error> {
+pub async fn main() {
     tracing_subscriber::fmt::init();
 
     // default configuration is to join chat as anonymous
@@ -122,5 +121,4 @@ pub async fn main() -> Result<(), tts::Error> {
     // leave the twitch channel
     client.part(STREAMER.to_owned());
 
-    Ok(())
 }
