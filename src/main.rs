@@ -58,7 +58,6 @@ pub async fn main() -> Result<(), tts::Error> {
 
         // gets each message one at a time
         while let Some(message) = incoming_messages.recv().await {
-            tracing::info!("Recieved message");
             //if message is a live chat message
             match message {
                 ServerMessage::Privmsg(msg) => {
@@ -88,9 +87,12 @@ pub async fn main() -> Result<(), tts::Error> {
             for (message, data) in &messages {
                 // if message is popular, speak it with tts
                 if data.users.len() >= USER_THRESHOLD {
-                    println!("Speaking \"{}\"", message);
+                    tracing::info!("Speaking \"{}\"", message);
                     deleted_messages.push(message.clone());
-                    tts.speak(message, false).unwrap();
+                    tts.speak(message, false).unwrap_or_else(|err| {
+                        tracing::error!("Unable to speak message! {:#?}", err);
+                        None // if we failed to speak something, there will be no utterance id
+                    });
                 }
 
                 // if message is old, remove it
