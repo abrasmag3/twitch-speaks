@@ -42,7 +42,7 @@ pub async fn main() {
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
-    tokio::spawn(async move {
+    let handle = tokio::spawn(async move {
         tracing::info!("Starting manage_messages");
         // BTreeMap of recent messages, sorted by message content
         // BTreeMap<Message, Vec<UserID>>
@@ -114,11 +114,6 @@ pub async fn main() {
     // error with `unwrap`
     client.join(STREAMER.to_owned()).unwrap();
 
-    // wait for ctrl+c
-    signal::ctrl_c().await.expect("failed to wait for ctrl+c");
-    // after ctrl+c, start shutdown procedure
-
-    // leave the twitch channel
-    client.part(STREAMER.to_owned());
+    handle.await.unwrap();
 
 }
